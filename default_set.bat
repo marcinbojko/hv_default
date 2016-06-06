@@ -1,6 +1,6 @@
 ﻿::(C) Marcin Bojko
-::$VER 1.07
-::2015-05-05
+::$VER 1.08
+::2016-06-25
 
 cd /d %~dp0
 
@@ -8,18 +8,19 @@ cd /d %~dp0
 
 :: Hyper-V default firewall settings
 netsh advfirewall set currentprofile settings remotemanagement enable
-netsh advfirewall firewall set rule group="File and Printer Sharing" new enable=yes
-netsh advfirewall firewall set rule group="Remote Service Management" new enable=yes
-netsh advfirewall firewall set rule group="Performance Logs and Alerts" new enable=yes
-Netsh advfirewall firewall set rule group="Remote Event Log Management" new enable=yes
-Netsh advfirewall firewall set rule group="Remote Scheduled Tasks Management" new enable=yes
-netsh advfirewall firewall set rule group="Remote Volume Management" new enable=yes
-netsh advfirewall firewall set rule group="Windows Firewall Remote Management" new enable =yes
-netsh advfirewall firewall set rule group="windows management instrumentation (wmi)" new enable =yes
-netsh advfirewall firewall set rule group="Remote Administration" new enable=yes
-netsh advfirewall firewall set rule group="Remote Desktop" new enable=yes
-netsh advfirewall firewall set rule group="Hyper-v Replica HTTP" new enable=yes
-netsh advfirewall firewall set rule group="Hyper-v Replica HTTPS" new enable=yes
+@powershell Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+@powershell Enable-NetFirewallRule -DisplayGroup "File and Printer Sharing" 
+@powershell Enable-NetFirewallRule -DisplayGroup "Remote Service Management" 
+@powershell Enable-NetFirewallRule -DisplayGroup "Performance Logs and Alerts" 
+@powershell Enable-NetFirewallRule -DisplayGroup "Remote Event Log Management" 
+@powershell Enable-NetFirewallRule -DisplayGroup "Remote Scheduled Tasks Management"
+@powershell Enable-NetFirewallRule -DisplayGroup "Remote Volume Management"
+@powershell Enable-NetFirewallRule -DisplayGroup "Windows Firewall Remote Management"
+@powershell Enable-NetFirewallRule -DisplayGroup "Windows Management Instrumentation (WMI)"
+@powershell Enable-NetFirewallRule -DisplayGroup "Remote Administration"
+@powershell Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+@powershell Enable-NetFirewallRule -DisplayGroup "Hyper-v Replica HTTP"
+@powershell Enable-NetFirewallRule -DisplayGroup "Hyper-v Replica HTTPS"
 
 :: ISCSI settings
 netsh advfirewall firewall set rule group="iSCSI Service" new enable=yes
@@ -27,13 +28,12 @@ netsh advfirewall firewall set rule group="iSCSI Service" new enable=yes
 ::SNMP
 dism /online /enable-feature /featurename:SNMP
 
-
 :: Allow PING
 netsh firewall set icmpsetting 8
 
 ::Set vd service on start
-sc config vds start= auto
-net start vds
+::sc config vds start= auto
+::net start vds
 
 
 :: Install features
@@ -52,27 +52,19 @@ powershell Install-WindowsFeature Hyper-V-PowerShell
 powershell Install-WindowsFeature PowerShell-V2 
 
 
+:: Start Services
 powershell Set-Service -Name MSiSCSI -StartupType Automatic
 powershell Start-Service MSiSCSI
+powershell Set-Service -Name vds -StartupType Automatic
+powershell Start-Service vds
 
-
-
-:: create shares
-:: mkdir c:\share
-:: net share share=c:\share /grant:Administrator.FULL,Domain Admins.Full
-
-::Copy rhirstmanager
-::mkdir C:\Windows\SysWOW64\WindowsPowerShell\v1.0\Modules\RhIrstManager
-::robocopy ./Intel/ C:\Windows\SysWOW64\WindowsPowerShell\v1.0\Modules\RhIrstManager
-
-
-::create LACP
-:: powershell New-NetLbfoTeam LACP01 "Ethernet 2" , "Ethernet 4" -TeamingMode Lacp ‑LoadBalancingAlgorithm HyperVPort
-
-
-::install smartmontools for monitoring S.M.A.R.T. of HDDs
-::.\apps\smartmontools-win-6.2-1.exe -f it.hardware@eleader.biz -t it@eleader.biz -s mail.eleader.biz --tls=auto --keepfirstlog=no --ignoretemperature=no --short=S/../.././23 --long=L/../../6/23 --localmessages=yes /silent
-
-::enable autenthication
+:: Set authentication
 winrm set winrm/config/service/auth @{CredSSP="true"}
  
+:: Install chocolatey
+@powershell -NoProfile -ExecutionPolicy Bypass -Command "iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))" && SET PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin
+
+:: Install puppet and configure to access foreman.eleader.lan
+choco install puppet -ia '"PUPPET_MASTER_SERVER=foreman.office.eleader.biz"' -y
+choco install doublecmd
+
