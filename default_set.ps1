@@ -1,6 +1,6 @@
 ﻿# (C) Marcin Bojko
-# $VER 1.10
-# 2016-06-10
+# $VER 1.11
+# 2016-06-16
 
 # Hyper-V default firewall settings
 Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
@@ -46,9 +46,18 @@ choco install puppet -ia '"PUPPET_MASTER_SERVER=foreman.eleader.lan"' -y
 
 # Disable Puppet not to run
 Stop-Service puppet
+Set-Service -Name puppet -StartupType Automatic
 
 # install extrapackages required
 choco install doublecmd,sysinternals,notepadplusplus -y
+
+#Ask for name, renam and join domain
+$newcomputername = Read-Host -Prompt "Podaj nazwę komputera pod jaką zostanie dołączony do domeny"
+$cred = Get-Credential
+Add-Computer -DomainName "eleader.lan" -Credential $cred -OUPath "OU=Servers-HyperV,DC=eleader,DC=lan" -WhatIf
+Rename-Computer -NewName $newcomputername -DomainCredential $cred -Force -WhatIf
+Restart-Computer -WhatIf
+
 
 
 
