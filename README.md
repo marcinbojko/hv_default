@@ -4,6 +4,9 @@
 * Marcin Bojko
 
 ## Changelog
+* 2016-06-21 version 1.12
+	* added values for JumboPacket and VMQ disable
+	* improved logic for adding computer to domain
 
 * 2016-06-10 version 1.10
 	* switched to Powershell v3 for whole script
@@ -17,3 +20,6 @@
 	* Switching to PowerShell for firewall features.
 	* Install chocolatey at the end
 	
+## Usage
+powershell .\default_set.ps1
+
