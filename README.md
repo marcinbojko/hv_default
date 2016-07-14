@@ -31,7 +31,7 @@ Also, install Chocolatey provider, installs doublecmd and sysinternals package, 
 ## Prerequisites
 * at least one configured network interface (IP/Subnet/GW/DNS)
 * installation source left on (usb/dvd) - required for winsxs folder
-* 	
+	
 ## Usage
 powershell .\default_set.ps1
 
