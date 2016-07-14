@@ -1,4 +1,4 @@
-<h1> Batch script for default settings in new Hyper-V 2012 R2 instalations
+<h1> Powershell script for default settings in new Hyper-V 2012 R2 instalations
 
 ## Maintainer
 * Marcin Bojko - marcinbojko.pl(at)gmail.com
@@ -10,7 +10,7 @@ Also, install Chocolatey provider, installs doublecmd and sysinternals package, 
 
 * 2016-07-13 version 1.13
 	* switched to variables in some code parts
-	
+
 * 2016-06-21 version 1.12
 	* added values for JumboPacket and VMQ disable
 	* improved logic for adding computer to domain
