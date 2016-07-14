@@ -1,6 +1,13 @@
 # (C) Marcin Bojko
-# $VER 1.12
-# 2016-06-21
+# $VER 1.13
+# 2016-07-13
+
+# Vars
+$my_foreman_server   ='foreman.local'                           # puppet server to add mentioned computer
+$my_domain_name      ='domain.local'                            # Active Directory domain name
+$my_domain_ou_path   ='OU=Hyperv,DC=domain,DC=local'            # OU to add your server
+$choco_extra_source  ='https://www.myget.org/F/eleader/api/v2'  # If you have additional sources for chocolatey
+$jumbo_key_value     = 6144                                     # should tweak this, or disable if you have different NICs
 
 # Hyper-V default firewall settings
 Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
@@ -32,16 +39,16 @@ Install-WindowsFeature RSAT-Role-Tools
 Install-WindowsFeature PowerShell-V2
 
 
-#Enable Remote Desktop features
+# Enable Remote Desktop features
 set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server'-name "fDenyTSConnections" -Value 0
 # Disable NLA
 set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 0
 
-#Disable VMQ for 1Gbit NIC for every NIC
+# Disable VMQ for 1Gbit NIC for every NIC
 Get-NetAdapterVmq|Set-NetAdapterVmq -Enabled $False
 Start-Sleep -Seconds 5
 
-#Enable Jumbo Frames (6K=6144) for every NIC
+# Enable Jumbo Frames (6K=6144) for every NIC
 Get-NetAdapter | Where-Object -FilterScript {($_.Status -eq "Up") -and ($_.Name -like "Ethern*") }|Set-NetAdapterAdvancedProperty -RegistryKeyword "*JumboPacket" -RegistryValue 6144
 Start-Sleep -Seconds 5
 
@@ -55,10 +62,10 @@ Start-Service vds
 iwr https://chocolatey.org/install.ps1 -UseBasicParsing | iex
 
 # Add local source
-choco source add -n=eLeader -s"https://www.myget.org/F/eleader/api/v2" --priority=10
+choco source add -n=eLeader -s"$choco_extra_source" --priority=10
 
 # Install puppet and configure to access foreman.eleader.lan
-choco install puppet -ia '"PUPPET_MASTER_SERVER=foreman.eleader.lan"' -y
+choco install puppet -ia '"PUPPET_MASTER_SERVER=$my_foreman_server"' -y
 
 # Disable Puppet not to run before changing the name
 Stop-Service puppet
@@ -67,12 +74,15 @@ Set-Service -Name puppet -StartupType Automatic
 # install extrapackages required (ready to be modified)
 choco install doublecmd sysinternals -y
 
-#Ask for name, renam and join domain
-$newcomputername = Read-Host -Prompt "Podaj nazwę komputera pod jaką zostanie dołączony do domeny"
+# Ask for name, rename and join domain
+
+$newcomputername = Read-Host -Prompt "Please, give new name for the computer:[ENTER]"
+
 $cred = Get-Credential
-Add-Computer -DomainName "eleader.lan" -Credential $cred -OUPath "OU=Servers-HyperV,DC=eleader,DC=lan"
+Add-Computer -DomainName $my_domain_name -Credential $cred -OUPath $my_domain_ou_path
 Rename-Computer -NewName $newcomputername -DomainCredential $cred -Force
 
+#Optional
 #Restart-Computer
 
 
