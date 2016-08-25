@@ -1,6 +1,6 @@
 # (C) Marcin Bojko
-# $VER 1.13
-# 2016-07-13
+# $VER 1.14
+# 2016-08-25
 
 # Vars
 $my_foreman_server   ='foreman.local'                           # puppet server to add mentioned computer
@@ -63,6 +63,10 @@ iwr https://chocolatey.org/install.ps1 -UseBasicParsing | iex
 
 # Add local source
 choco source add -n=eLeader -s"$choco_extra_source" --priority=10
+
+# Change settings about empty checksums
+choco feature -r enable -n allowGlobalConfirmation
+choco feature -r enable -n allowEmptyChecksums
 
 # Install puppet and configure to access foreman.eleader.lan
 choco install puppet -ia '"PUPPET_MASTER_SERVER=$my_foreman_server"' -y
