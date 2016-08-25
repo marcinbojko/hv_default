@@ -8,6 +8,10 @@ Also, install Chocolatey provider, installs doublecmd and sysinternals package, 
 
 ## Changelog
 
+* 2016-08-25 version 1.14
+	* added features for chocolatey due to changes in 0.10.0
+	* first test with Hyper-V 2016 TP5
+
 * 2016-07-13 version 1.13
 	* switched to variables in some code parts
 
