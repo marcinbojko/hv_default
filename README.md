@@ -1,12 +1,12 @@
-<h1> Powershell script for default settings in new Hyper-V 2012 R2 instalations
+# Powershell script for default settings in new Hyper-V 2012 R2 instalations #
 
-## Maintainer
+## Maintainer ##
 * Marcin Bojko - marcinbojko.pl(at)gmail.com
 
 This script adds required Windows features and firewall settings as well.
 Also, install Chocolatey provider, installs doublecmd and sysinternals package, installs and cofigures Puppet Agent for WIndows (3.x)
 
-## Changelog
+## Changelog ##
 
 * 2016-08-25 version 1.14
 	* added features for chocolatey due to changes in 0.10.0
@@ -40,6 +40,6 @@ Also, install Chocolatey provider, installs doublecmd and sysinternals package, 
 powershell .\default_set.ps1
 
 ## Optional Items to disable
-* Enable/Disable JUmbo frames (may be skipped)
+* Enable/Disable Jumbo frames (may be skipped)
 * Install chocolatey provider
 * Install additional packages (doublecmd, sysinternals)
