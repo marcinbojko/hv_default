@@ -49,7 +49,7 @@ Get-NetAdapterVmq|Set-NetAdapterVmq -Enabled $False
 Start-Sleep -Seconds 5
 
 # Enable Jumbo Frames (6K=6144) for every NIC
-Get-NetAdapter | Where-Object -FilterScript {($_.Status -eq "Up") -and ($_.Name -like "Ethern*") }|Set-NetAdapterAdvancedProperty -RegistryKeyword "*JumboPacket" -RegistryValue 6144
+Get-NetAdapter | Where-Object -FilterScript {($_.Status -eq "Up") -and ($_.InterfaceDescription -notlike "*microsoft*")}|Set-NetAdapterAdvancedProperty -RegistryKeyword "*JumboPacket" -RegistryValue 6144
 Start-Sleep -Seconds 5
 
 # Start Services
