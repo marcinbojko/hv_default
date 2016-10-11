@@ -1,6 +1,6 @@
 ﻿# (C) Marcin Bojko
 # $VER 1.16
-# 2016-10-04
+# 2016-10-11
 
 # Vars
 
@@ -11,7 +11,7 @@ $my_domain_ou_path          ="OU=Devices,DC=office,DC=eleader,DC=biz"    # OU to
 $choco_extra_source         ='https://www.myget.org/F/public-choco'      # If you have additional sources for chocolatey
 $choco_extra_source_name    ='marcinbojko'                               # source name
 $jumbo_key_value            = 9014                                       # should tweak this, or disable if you have different NICs
-$puppet_agent               ='puppet'                                    # puppet = version 3.8, puppet-agent=version 1.7.x (Puppet4)
+$puppet_agent               ='puppet-agent'                              # puppet = version 3.8, puppet-agent=version 1.7.x (Puppet4)
 $source_directory           =''                                          # variable for storing source dir
 $choco_packages             =@("doublecmd","sysinternals","powershell")  # packages intended to install wih chocolatey
 
@@ -33,6 +33,9 @@ $choco_packages             =@("doublecmd","sysinternals","powershell")  # packa
         {
             Install-WindowsFeature net-framework-core -Source $source_directory -ErrorAction SilentlyContinue
             Install-WindowsFeature net-framework-features -Source $source_directory -ErrorAction SilentlyContinue
+        }
+        else {
+            Write-Output "No source of SxS folder could not be found. Not installing .NET Framework 2.0"
         }
 
 # If we have Windows Server
@@ -92,15 +95,15 @@ $env:chocolateyUseWindowsCompression = 'false'
 choco source add -n=$choco_extra_source_name -s"$choco_extra_source" --priority=10
 
 # Install puppet and configure to access foreman server
-$my_foreman_server_parsed = "`'`""+$my_foreman_server+"`"`'"
-choco install $puppet_agent -ia $($my_foreman_server_parsed) -y --debug
+$my_foreman_server_parsed = "PUPPET_MASTER_SERVER=$my_foreman_server"
+choco install $puppet_agent -ia $($my_foreman_server_parsed) -y --allow-empty-checksums
 
-# Disable Puppet not to run before changing the name
+# Stop Puppet service before name change
 Stop-Service puppet -ErrorAction SilentlyContinue
 Set-Service -Name puppet -StartupType Automatic -ErrorAction SilentlyContinue
 
 # install extrapackages required (ready to be modified)
-choco install $choco_packages -y
+choco install $choco_packages -y --allow-empty-checksums
 
 # Ask for name, rename and join domain
 $newcomputername = Read-Host "Please give new name for the computer"
