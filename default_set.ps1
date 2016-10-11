@@ -1,13 +1,54 @@
-# (C) Marcin Bojko
-# $VER 1.13
-# 2016-07-13
+﻿# (C) Marcin Bojko
+# $VER 1.16
+# 2016-10-11
 
 # Vars
-$my_foreman_server   ='foreman.local'                           # puppet server to add mentioned computer
-$my_domain_name      ='domain.local'                            # Active Directory domain name
-$my_domain_ou_path   ='OU=Hyperv,DC=domain,DC=local'            # OU to add your server
-$choco_extra_source  ='https://www.myget.org/F/eleader/api/v2'  # If you have additional sources for chocolatey
-$jumbo_key_value     = 6144                                     # should tweak this, or disable if you have different NICs
+
+$ErrorActionPreference      = "Continue"
+$my_foreman_server          ='foreman.local'                             # puppet server to add mentioned computer
+$my_domain_name             ='domain.local'                              # Active Directory domain name
+$my_domain_ou_path          ="OU=Devices,DC=office,DC=eleader,DC=biz"    # OU to add your server
+$choco_extra_source         ='https://www.myget.org/F/public-choco'      # If you have additional sources for chocolatey
+$choco_extra_source_name    ='marcinbojko'                               # source name
+$jumbo_key_value            = 9014                                       # should tweak this, or disable if you have different NICs
+$puppet_agent               ='puppet-agent'                              # puppet = version 3.8, puppet-agent=version 1.7.x (Puppet4)
+$source_directory           =''                                          # variable for storing source dir
+$choco_packages             =@("doublecmd","sysinternals","powershell")  # packages intended to install wih chocolatey
+
+
+# Let's check where is sources/sxs
+    $our_disks = (get-psdrive –psprovider filesystem).Root
+        foreach ($our_disk in $our_disks)
+                {
+                    $testpath=$our_disk+"sources\sxs\"
+                    if (Test-Path $testpath)
+                        { Write-Output "Found SXS folder in $our_disk"
+                        $source_directory=$testpath
+                        break
+                        }
+                }
+
+# Install features
+    if ($source_directory -ne "")
+        {
+            Install-WindowsFeature net-framework-core -Source $source_directory -ErrorAction SilentlyContinue
+            Install-WindowsFeature net-framework-features -Source $source_directory -ErrorAction SilentlyContinue
+        }
+        else {
+            Write-Output "No source of SxS folder could not be found. Not installing .NET Framework 2.0"
+        }
+
+# If we have Windows Server
+Install-WindowsFeature Hyper-V -ErrorAction SilentlyContinue
+Install-WindowsFeature EnhancedStorage -IncludeManagementTools
+Install-WindowsFeature Failover-Clustering -IncludeManagementTools
+Install-WindowsFeature Multipath-IO -IncludeManagementTools
+Install-WindowsFeature SNMP-Service -IncludeManagementTools
+Install-WindowsFeature SNMP-WMI-Provider -IncludeManagementTools
+Install-WindowsFeature Telnet-Client
+Install-WindowsFeature RSAT-Role-Tools
+Install-WindowsFeature PowerShell-V2
+
 
 # Hyper-V default firewall settings
 Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
@@ -26,21 +67,9 @@ Enable-NetFirewallRule -DisplayGroup "iSCSI Service" -Direction "Outbound"
 Enable-NetFirewallRule -DisplayGroup "iSCSI Service" -Direction "Inbound"
 Enable-NetFirewallRule -DisplayName "File and Printer Sharing (Echo Request - ICMPv4-In)"
 
-# Install features
-Install-WindowsFeature net-framework-core
-Install-WindowsFeature net-framework-features
-Install-WindowsFeature EnhancedStorage -IncludeManagementTools
-Install-WindowsFeature Failover-Clustering -IncludeManagementTools
-Install-WindowsFeature Multipath-IO -IncludeManagementTools
-Install-WindowsFeature SNMP-Service -IncludeManagementTools
-Install-WindowsFeature SNMP-WMI-Provider -IncludeManagementTools
-Install-WindowsFeature Telnet-Client
-Install-WindowsFeature RSAT-Role-Tools
-Install-WindowsFeature PowerShell-V2
-
-
 # Enable Remote Desktop features
 set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server'-name "fDenyTSConnections" -Value 0
+
 # Disable NLA
 set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 0
 
@@ -49,8 +78,8 @@ Get-NetAdapterVmq|Set-NetAdapterVmq -Enabled $False
 Start-Sleep -Seconds 5
 
 # Enable Jumbo Frames (6K=6144) for every NIC
-Get-NetAdapter | Where-Object -FilterScript {($_.Status -eq "Up") -and ($_.InterfaceDescription -notlike "*microsoft*")}|Set-NetAdapterAdvancedProperty -RegistryKeyword "*JumboPacket" -RegistryValue 6144
-Start-Sleep -Seconds 5
+Get-NetAdapter | Where-Object -FilterScript {($_.Status -eq "Up") -and ($_.InterfaceDescription -notlike "*microsoft*")}|Set-NetAdapterAdvancedProperty -RegistryKeyword "*JumboPacket" -RegistryValue $jumbo_key_value|Restart-NetAdapter
+Start-Sleep -Seconds 10
 
 # Start Services
 Set-Service -Name MSiSCSI -StartupType Automatic
@@ -59,33 +88,28 @@ Set-Service -Name vds -StartupType Automatic
 Start-Service vds
 
 # Install chocolatey
-iwr https://chocolatey.org/install.ps1 -UseBasicParsing | iex
+$env:chocolateyUseWindowsCompression = 'false'
+(Invoke-Expression ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1')))>$null 2>&1
 
 # Add local source
-choco source add -n=eLeader -s"$choco_extra_source" --priority=10
+choco source add -n=$choco_extra_source_name -s"$choco_extra_source" --priority=10
 
-# Install puppet and configure to access foreman.eleader.lan
-choco install puppet -ia '"PUPPET_MASTER_SERVER=$my_foreman_server"' -y
+# Install puppet and configure to access foreman server
+$my_foreman_server_parsed = "PUPPET_MASTER_SERVER=$my_foreman_server"
+choco install $puppet_agent -ia $($my_foreman_server_parsed) -y --allow-empty-checksums
 
-# Disable Puppet not to run before changing the name
-Stop-Service puppet
-Set-Service -Name puppet -StartupType Automatic
+# Stop Puppet service before name change
+Stop-Service puppet -ErrorAction SilentlyContinue
+Set-Service -Name puppet -StartupType Automatic -ErrorAction SilentlyContinue
 
 # install extrapackages required (ready to be modified)
-choco install doublecmd sysinternals -y
+choco install $choco_packages -y --allow-empty-checksums
 
 # Ask for name, rename and join domain
-
-$newcomputername = Read-Host -Prompt "Please, give new name for the computer:[ENTER]"
-
+$newcomputername = Read-Host "Please give new name for the computer"
 $cred = Get-Credential
 Add-Computer -DomainName $my_domain_name -Credential $cred -OUPath $my_domain_ou_path
 Rename-Computer -NewName $newcomputername -DomainCredential $cred -Force
 
 #Optional
-#Restart-Computer
-
-
-
-
-
+Restart-Computer -Confirm -Force
