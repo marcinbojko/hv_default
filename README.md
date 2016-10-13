@@ -12,6 +12,10 @@ Also, install Chocolatey provider, installs doublecmd and sysinternals package, 
 
 ## Changelog
 
+### 2016-10-13 version 1.17
+
+* checked with official Hyper-V 2016 versions
+
 ### 2016-10-11 version 1.16
 
 * added powershell (5.0) to the list of installed packages

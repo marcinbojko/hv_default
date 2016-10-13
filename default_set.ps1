@@ -1,6 +1,6 @@
 ﻿# (C) Marcin Bojko
-# $VER 1.16
-# 2016-10-11
+# $VER 1.17
+# 2016-10-13
 
 # Vars
 
@@ -109,7 +109,7 @@ choco install $choco_packages -y --allow-empty-checksums
 $newcomputername = Read-Host "Please give new name for the computer"
 $cred = Get-Credential
 Add-Computer -DomainName $my_domain_name -Credential $cred -OUPath $my_domain_ou_path
-Rename-Computer -NewName $newcomputername -DomainCredential $cred -Force
+Rename-Computer -NewName $newcomputername -DomainCredential $cred -Force -Confirm:$false
 
 #Optional
 Restart-Computer -Confirm -Force
