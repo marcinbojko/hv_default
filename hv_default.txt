@@ -1,0 +1,14 @@
+my_foreman_server = test.test.com
+choco_packages = doublecmd;visualstudiocode
+my_domain_name = domain.test                             
+my_domain_ou_path = OU=Test,DC=dc,DC=example,DC=test
+my_domain_user = aaa@example.org
+my_domain_user_password = somepassword
+choco_extra_source = https://www.myget.org/F/public-choco2
+choco_extra_source_name = test                               
+jumbo_key_value = 9014
+puppet_agent = puppet
+#quiet_mode = true
+
+
+

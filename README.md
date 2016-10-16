@@ -1,4 +1,3 @@
-
 # Powershell script for default settings in new Hyper-V 2012 R2/2016 instalations
 
 ## Author
@@ -11,6 +10,13 @@ This script adds required Windows features and firewall settings as well.
 Also, install Chocolatey provider, installs doublecmd and sysinternals package, installs and cofigures Puppet Agent for WIndows (3.x or 4.x)
 
 ## Changelog
+
+### 2016-10-16 version 1.18
+
+* added storing variables in hv_default.txt file
+* added `quiet_mode` variable for 'in script' processing
+* fixed error with $choco_extra_source_name variable being not parsed for `choco source` part
+* rename script `default_set.ps1` to `hv_default.ps1`
 
 ### 2016-10-13 version 1.17
 
@@ -64,11 +70,22 @@ Also, install Chocolatey provider, installs doublecmd and sysinternals package, 
 ## Usage
 
 ```powershell
-powershell .\default_set.ps1
+powershell .\hv_default.ps1
 ```
 
-## Optional Items to disable
+### Params file
 
-* Enable/Disable Jumbo frames (may be skipped)
-* Install chocolatey provider
-* Install additional packages (doublecmd, sysinternals)
+If script can find file `hv_default.txt` all parameters can be read from file, overwriting default values.
+Separator is set on " = ". If you want to skip line that start with `#`
+
+```ini
+my_foreman_server = test.test.com
+choco_packages = doublecmd;visualstudiocode;powershell
+my_domain_name = domain.test
+my_domain_ou_path = OU=Test,DC=dc,DC=example,DC=test
+choco_extra_source = https://www.myget.org/F/public-choco2
+choco_extra_source_name = test
+jumbo_key_value = 6000
+puppet_agent = puppet
+quiet_mode = true
+```
